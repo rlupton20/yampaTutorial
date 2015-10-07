@@ -1,0 +1,207 @@
+Now we've pinned down the mechanics of how we will incorporate our signal functions into real working code, we can write our first example. Save a copy of \hask{YampaUtils.hs} in your working directory, for your use in these examples. Our first example, Listing \ref{lst:helloYampa}, is the Hello, World of Yampa.
+
+\lstinputlisting[caption={HelloYampa.hs}, label=lst:helloYampa]{./src/HelloYampa.hs}
+
+Our discussion in the introduction about \hask{reactimate}, and our tidied version \yampaMain, should give you a rough idea of what is going on here. \yampaMain first calls \hask{initialise}, which prints some text to the screen, but provides no input (or, more precisely, provides as input \hask{()}). The input function passed to \yampaMain is just \hask{return Nothing}, which again provides no input to the system.
+
+\hask{waitTwo} is a signal function, and is the new code in this listing. For the moment, lets just observe that it converts a signal of values of type \hask{()} into a signal of values of type \hask{Bool}, which is what its type signature \hask{SF () Bool} is meant to indicate (`` a signal function from signals of type \hask{()} to signals of type \hask{Bool}'').
+
+The output function, \hask{output}, takes this boolean value, and if its false, just instructs \yampaMain to continue by passing out a \hask{False} value in the \hask{IO} monad. However, if the boolean value is true, the output function first prints a message to the screen, and then returns an \hask{IO} value of \hask{True}, which instructs \yampaMain to stop executing, and the program finishes.
+
+Precisely when the value \hask{True} emerges from \yampaMain is determined in the signal function \hask{waitTwo}. So lets take a look at this object.
+
+\begin{lstlisting}
+waitTwo :: SF () Bool
+waitTwo = time >>> arr (>=2)
+\end{lstlisting}
+
+The specification for \hask{waitTwo} is that it should take the input signal (which here is constantly taking value \hask{()}), and if \hask{waitTwo} has been transforming input values for less than 2 seconds, it should transform the input into a value \hask{False}, and otherwise, it should transform the input signal into a value \hask{True}. This boils down to saying, \yampaMain should receive a value \hask{True} to give to \hask{output}, precisely when \yampaMain has been running for 2 seconds. Compiling and running this code seems to confirm this.
+
+So how has \hask{waitTwo} been defined? It consists of two parts combined together with the operator \hask{>>>}. First lets take a look at \hask{time}.
+
+\begin{lstlisting}
+time :: SF a Time
+\end{lstlisting}
+
+\noindent \hask{time} takes a signal of any value, and replaces it with a value of type \hask{Time}, a synonym for \hask{Double}. The value is the time the particular instantiation of \hask{time} has been in use, starting from $0$. So in our case, it takes the value \hask{()}, and replaces it with the time that \yampaMain has been using \hask{waitTwo}, which is the length of time \yampaMain has been running.
+
+Secondly, we have \hask{arr (>=2)}. Now inspecting the type of this in ghci reveals \hask{arr} is a function which makes use of the \hask{Arrow} type class. \hask{SF} is an instance of this type class, and specialising its type signature to \hask{SF}, we have:
+
+\begin{lstlisting}
+arr :: (a -> b) -> SF a b 
+\end{lstlisting}
+
+\noindent \hask{arr} is a way of lifting pure functions into \hask{SF}, analogous to how \hask{return} lifts values in a monad, and \hask{pure} lifts values for applicative functors. More precisely, if \hask{f :: a -> b}, then \hask{arr f} takes a signal of values of type \hask{a}, and transforms it into a signal of values of type \hask{b}, by applying \hask{f} to each value of type \hask{a}. In some sense, it is the continuous signal analogue of \hask{fmap} for the functor typeclass.
+
+In our example, we have the signal function \hask{arr (>=2)}, which by specialising to types \hask{SF} again has type:
+
+\begin{lstlisting}
+arr (>=2) :: (Num a, Ord a) => SF a Bool
+\end{lstlisting}
+
+\noindent \hask{arr (>=2)} takes a signal with numerical and orderable values, and applies \hask{(>=2)} to these values. So our transformed signal will output \hask{True} precisely when the input signal takes on values greater than or equal to 2.
+
+So we have two signal functions, with an operator which combines them (a \emph{combinator}). Lets inspect the type of \hask{>>>}, specialised to \hask{SF} again.
+
+\begin{lstlisting}
+(>>>) :: SF a b -> SF b c -> SF a c
+\end{lstlisting}
+
+\noindent The type signature (and the fact that the more general version is for objects from the typeclass \hask{Category}), is a giveaway for what \hask{(>>>)} does. \hask{(>>>)} is the \hask{SF} analogue of composition. Given a way of transforming signals of value type \hask{a} into signals of value type \hask{b}, and a way of transforming signals of value type \hask{b} into signals of value type \hask{c}, by performing each transformation in order, I can transform signals of value type \hask{a} into signals of value type \hask{c}. This is the function of the \hask{(>>>)} combinator. More precisely, \hask{f >>> g} first transforms with \hask{f}, and then with \hask{g} (recall \hask{f.g} first applies g \emph{then} applies \hask{f}).
+
+So now we can analyse what \hask{waitTwo} actually does. \hask{waitTwo} takes an input signal of values \hask{()}, and replaces these values with the time which \yampaMain has been running. It then takes this time, and if it is less than 2 seconds, replaces this time value with a \hask{False}. Otherwise, it replaces this time value with \hask{True}. In total, \hask{waitTwo} transforms \hask{()} into \hask{False} if \yampaMain has been running less than 2 seconds, and \hask{True} once its been running at least two seconds.
+
+\begin{observation}
+Observe that \hask{arr (f.g) = arr g >>> arr f}. Observe that \hask{time} is not the \hask{arr} of a pure function.
+\end{observation}
+
+\section{Building signal functions}
+
+Our first example is intentionally not the most intricate or complicated of examples. We build a very simple signal function, with the intention of showing how a Yampa program fits together.
+
+The bulk of the Yampa library is concerned with building signal functions. Rather than building signal functions explicitly, Yampa supplies a basic set of signal functions (we saw for instance, \hask{time}, above), and a set of \emph{combinators} for combining various signal functions (for instance, signal function composition \hask{>>>}).
+
+\section{Some basic signal functions and combinators}
+
+Lets begin with some of the basic signal functions which Yampa provides. As one might expect from a library based around transformations, one has analogues for the identity map, and constant maps.
+
+\begin{lstlisting}
+identity :: SF a a
+constant :: b -> SF a b
+\end{lstlisting}
+
+\noindent Of course, \hask{identity} preserves the value of a signal, and \hask{constant v} takes a signal, and replaces its value by the value \hask{v}.
+
+\begin{exercise}
+Write definitions for \hask{identity} and \hask{constant} in terms of \hask{arr}.
+\end{exercise}
+
+In our first example, we saw the signal function \hask{time}. \hask{time} takes a signals value, and replaces it with the \emph{local} time, that is the time a signal function has been processing a signal. For the moment, this would appear to be the same time as \yampaMain has been running, and with what has been covered so far, it is, but later we will see that signal functions can be switched in and out in response to events, at which point the time counter starts over from zero. For the sake of completeness (recall \hask{Time} is a synonym for Double):
+
+\begin{lstlisting}
+time :: SF a Time
+\end{lstlisting}
+
+An interesting built in function is \hask{integral}. This performs numerical integratation of a signal over time. Of course this is useful for describing dynamical systems!
+
+\begin{lstlisting}
+integral :: SF Double Double
+\end{lstlisting}
+
+\hask{integral} actually has a more general type than the above, but this suffices for now. Yampa provides an similar signal function for derivatives also.
+
+\begin{observation}
+\hask{time = constant 1.0 >>> integral}.
+\end{observation}
+
+We also have, as we have seen already, a way of lifting pure functions \hask{a -> b} to values of type \hask{SF a b}:
+
+\begin{lstlisting}
+arr :: (a -> b) -> SF a b
+\end{lstlisting}
+
+\noindent \hask{arr f} will take a signal of type \hask{a}, and process its value with \hask{f}, to create a signal of type \hask{b}.
+
+Now that we have a basic collection of arrows, we woud like some ways to combine them, to form more interesting arrows. The type constructor \hask{SF} is an instance of the \hask{Arrow} typeclass, a generalisation of the \hask{Monad} type class, so we have all the combinators from \hask{Arrow} available for use. We have already seen \hask{arr} above, which is part of the \hask{Arrow} interface, and earlier we saw \hask{(>>>)}.
+
+\hask{(>>>)} is the composition operator for signal functions. \hask{(f >>> g)} applies \hask{f} to a signal, then \hask{g} (note the order is reverse of \hask{.}). Similarly, \hask{(<<<)} is the composition operator the other way around, so \hask{(f <<< g)} performs \hask{g} then \hask{f}.
+
+\begin{lstlisting}
+(>>>) :: SF a b -> SF b c -> SF a c
+(<<<) :: SF b c -> SF a b -> SF a c
+\end{lstlisting}
+
+Sometimes we want to process a signal in two different ways. The combinator \hask{(\&\&\&)} is designed to allow us to do exactly that.
+
+\begin{lstlisting}
+(&&&) :: SF a b -> SF a c -> SF a (b,c)
+\end{lstlisting}
+
+\noindent Here \hask{(f \&\&\& g)} is intended to mean take the value of a signal, and apply \hask{f} to it, placing the output in the first component of a tuple. Also apply \hask{g} to the value of the signal, and place the output in the second component of the tuple.
+
+Since we can produce a signal which takes a tuple for values, (which we can think of as being two signals captured in one), we have combinators for processing them.
+
+First we have \hask{(***)}, which allows us to take two signal functions and make each act on a particular element of a tuple.
+
+\begin{lstlisting}
+(***) :: SF a1 b1 -> SF a2 b2 -> SF (a1, a2) (b1, b2)
+\end{lstlisting}
+
+\noindent \hask{(f *** g)} acts on a signal which takes a tuple for values, by applying \hask{f} to the first component, and \hask{g} to the second component.
+
+Sometimes, we only want to transform one of the elements of a signal of tuple type. While something of the form \hask{(f *** identity)} would do, Yampa defines such combinators for us:
+
+\begin{lstlisting}
+first :: SF a b -> SF (a, c) (b, c)
+second :: SF b c -> SF (a, b) (a, c)
+\end{lstlisting}
+
+\noindent \hask{first f} transforms only the first component of a signal of tuple values with \hask{f}, and \hask{second g} transforms only the second component of a signal with tuple values with \hask{g}.
+
+\begin{exercise}
+Write \hask{second} in terms of \hask{first} and \hask{arr}.
+\end{exercise}
+
+\begin{observation}
+\hask{ (f *** g) = (first f) >>> (second g) }.
+\end{observation}
+
+Our last combinator is \hask{loop}. \hask{loop} allows us to build recursive signal functions. It has type
+
+\begin{lstlisting}
+loop :: SF (a, c) (b, c) -> SF a b
+\end{lstlisting}
+
+\noindent \hask{(loop f)} is obtained from \hask{f} by looping its values' second component back in to \hask{f} for the next sample.
+
+\section{Arrow notation}
+
+The above primitives and combinators allow us to form more complex signal functions. In fact, any combination of basic signal functions can be formed. However, using the combinators directly can often lead to code which is difficult to read. For this reason, the arrow syntax was developed. This is the arrow analogue of monadic do notation. It allows us to express more clearly how we wish to process the values which signals take. A preprocessor transforms this notation into a description using the combinators we described above. When using arrow notation in ghci, load ghci with the -XArrows option, e.g. \hask{ghci -XArrows}. Similarly, when compiling with ghc, use the -XArrows option, e.g. \hask{ghc -XArrows main.hs}.
+
+Let us first inspect the general form of a block in arrow syntax. Also, take a look at the example that follows the discussion, since this will make it clearer. The basic form of arrow syntax is given in the following.
+
+\begin{lstlisting}
+sigFun :: SF a b
+sigFun = proc input -> do
+  processedSample1 <- sigFun1 -< sample1
+  processedSample2 <- sigFun2 -< sample2
+  ...
+  returnA -< finalSample
+\end{lstlisting}
+
+\hask{proc} is a keyword to indicate that the following is a block written in arrow syntax. \hask{input} represents a sample of type \hask{a}, and can be pattern matched against. A line of the form
+
+\begin{lstlisting}
+processedSample <- sigFun -< sample
+\end{lstlisting}
+
+\noindent takes the sample (from a signal) named \hask{sample}, processes it with \hask{sigFun}, and binds the resulting value to \hask{processedSample}. We can pattern match in the position of \hask{processedSample}. The line
+
+\begin{lstlisting}
+returnA -< finalSample
+\end{lstlisting}
+
+\noindent yields \hask{finalSample} as the final transformed sample. Note there is no binding, just like (and for the same reason as) a monadic \hask{do} block. As with \hask{do} blocks, \hask{let} bindings are also allowed in arrow syntax. As a word of warning, recursive definitions in arrow syntax must be preceeded by the keyword \hask{rec}. We will investigate this fully later.
+
+By way of example, lets describe a signal function which receives a signal of type \hask{Double}, which is intended to represent the acceleration of an object, and is intended to output a signal describing its position (assuming it starts at $0$, lets say). Using the normal combinators we could write the following:
+
+\begin{lstlisting}
+accToPos :: SF Double Double
+accToPos = integral >>> integral
+\end{lstlisting}
+
+\noindent which to be fair, is clear enough. In arrow syntax however, we can write this as
+
+\begin{lstlisting}
+accToPos :: SF Double Double
+accToPos = proc acc -> do
+  vel <- integral -< acc
+  pos <- integral -< vel
+  returnA -< pos
+\end{lstlisting}
+
+\noindent So we obtain \hask{vel} (velocity) by integrating the input \hask{acc} (acceleration), and we obtain \hask{pos} (position) by integrating the velocity \hask{vel}. \hask{pos} is the value we want, so we return that. It is not too hard to imagine signal functions where using the arrow syntax can greatly aid clarity. Observe that the wiring of samples through signal functions is represented in an intuitive manner.
+
+The above example would potentially be used in an animation program, or a simulation of some kind. We will build these kinds of programs later, but for the moment it would be nice to have some working code. We will develop our ``Hello, Yampa!'' program a little further. Here, we start by asking the user to specify a time to delay finishing the greeting, and feed this value in to \yampaMain via the initialisation value.
+
+\lstinputlisting[caption={askAndPause.hs}, label=lst:askingAndPausing]{./src/askAndPause.hs}

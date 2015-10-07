@@ -1,0 +1,33 @@
+\documentclass{report}
+\usepackage{charter}
+\usepackage{listings}
+\usepackage[showframe=false, a4paper, margin=3.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{FiraSans}
+%\usepackage{FiraMono}
+
+\newtheorem{observation}{Observation}
+\newtheorem{exercise}[observation]{Exercise}
+
+\begin{document}
+\title{Yampa}
+\author{Richard J.\ Lupton}
+\lstset{language=Haskell, captionpos=b, basicstyle=\footnotesize\ttfamily, keywordstyle=\bfseries, commentstyle=\itshape, breaklines=true}
+\linespread{1.45}
+
+\newcommand{\hask}[1]{\texttt{#1}}
+\newcommand{\yampaMain}{{\hask{yampaMain}} }
+
+\maketitle
+
+\chapter{What is Yampa?}
+\input{intro.tex}
+
+\chapter{Hello, Yampa}
+\input{helloYampa.tex}
+
+\chapter{Laboratory}
+\input{laboratory.tex}
+
+
+\end{document}

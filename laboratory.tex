@@ -1,0 +1,5 @@
+As exciting as variations of ``Hello, World'' are, it would be nice to be able to create some more sophisticated examples which illustrate some of the power and expression of Yampa.
+
+To this end, we will develop a small system which we will develop in a variety of ways.  The system will make use of Haskell's high level SDL bindings, so we can retrieve live input from the user, and also render some representation of the output signal in real-time to the screen. Make sure Haskell's high-level SDL bindings are installed on your system\footnote{The package you require is \hask{SDL}, and \emph{not} \hask{sdl2}. \hask{SDL} is the package containing the high-level bindings for SDL, while \hask{sdl2} only contains the basic wrappers for the C library. Make sure the SDL C library is installed on your operating system first (using your package manager), then for the Haskell bindings simply \hask{cabal install SDL}.}.
+
+\lstinputlisting[caption={laboratory.hs}, label=lst:laboratory]{./src/laboratory.hs}
