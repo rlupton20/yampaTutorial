@@ -2,4 +2,10 @@ As exciting as variations of ``Hello, World'' are, it would be nice to be able t
 
 To this end, we will develop a small system which we will develop in a variety of ways.  The system will make use of Haskell's high level SDL bindings, so we can retrieve live input from the user, and also render some representation of the output signal in real-time to the screen. Make sure Haskell's high-level SDL bindings are installed on your system\footnote{The package you require is \hask{SDL}, and \emph{not} \hask{sdl2}. \hask{SDL} is the package containing the high-level bindings for SDL, while \hask{sdl2} only contains the basic wrappers for the C library. Make sure the SDL C library is installed on your operating system first (using your package manager), then for the Haskell bindings simply \hask{cabal install SDL}.}.
 
-\lstinputlisting[caption={laboratory.hs}, label=lst:laboratory]{./src/laboratory.hs}
+\lstinputlisting[caption={template.hs}, label=lst:template]{./src/template.hs}
+
+\hask{SDLTools.hs} is a small module which wraps some common SDL tasks we will use in our programs. The code is not taxing, but its also not necessary to fully understand how each function works. The tasks they perform are largerly intuitive, and will be explained when they are used. It is listed here for completeness.
+
+\lstinputlisting[caption={SDLTools.hs}, label=lst:SDLTools]{./src/SDLTools.hs}
+
+% \lstinputlisting[caption={laboratory.hs}, label=lst:laboratory]{./src/laboratory.hs}
