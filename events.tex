@@ -1,0 +1,7 @@
+One of the nice properties of Yampa is that it can handle continuous and discrete signals (which are realised as a type of continuous signal) in one framework. A discrete signal is thought of as a signal whose value is either ``Nothing happened'', or ``Something happened, and here is some information''. More prescisely, a discrete signal is a signal with values of type \hask{Event a} where
+
+\begin{lstlisting}
+data Event a = NoEvent | Event a
+\end{lstlisting}
+
+Examples of discrete events might be mouseclicks or key presses, or when the ambient temperature exceeds a certain level.
