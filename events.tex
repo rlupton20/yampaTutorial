@@ -5,3 +5,11 @@ data Event a = NoEvent | Event a
 \end{lstlisting}
 
 Examples of discrete events might be mouseclicks or key presses, or when the ambient temperature exceeds a certain level.
+
+We refer to signals of \hask{Event} type as \emph{event streams}. A signal function of type \hask{SF a (Event b)} is called an \emph{event source}.
+
+A sample of an event stream will take two (types of) value: either \hask{NoEvent} or \hask{Event a} for some value of type \hask{a}. However, events should not occur with infinite density on a signal, and indeed, the sampling rate provides an upper bound for how often events can occur on a signal. If this is a problem, one should implement some buffering for events.
+
+\section{Switching and events}
+
+Events are used to initiate changes in signal functions.
