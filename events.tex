@@ -12,4 +12,12 @@ A sample of an event stream will take two (types of) value: either \hask{NoEvent
 
 \section{Switching and events}
 
-Events are used to initiate changes in signal functions.
+Events are used to initiate changes in signal functions. Yampa provides combinators which allow us to describe switching in one signal function for another when an event occurs. The most basic of these is \hask{switch}:
+
+\begin{lstlisting}
+switch :: SF a (b, Event c) -> (c -> SF a b) -> SF a b
+\end{lstlisting}
+
+\noindent The first argument of switch is best thought of as taking the form \hask{(sigFun \&\&\& eventSource)}, where \hask{sigFun :: SF a b} and \hask{eventSource :: SF a (Event c)}. The idea is that \hask{switch} says to use the signal function \hask{sigFun}, until \hask{eventSource} supplies an event. The event will be a sample of type \hask{Event c}, and this wrapped value of type \hask{c} is used to determine what the replacement signal function should be --- this is what the second input of type \hask{c -> SF a b} does. The result is a signal function of type \hask{SF a b}.
+
+In a more intuitive language, \hask{sigFun} is switched for a different signal function when an event occurs.
