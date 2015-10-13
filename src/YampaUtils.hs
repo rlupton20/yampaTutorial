@@ -1,5 +1,5 @@
 module YampaUtils
-( yampaMain ) where
+( yampaMain, sReactimate ) where
 
 import FRP.Yampa as Y
 import Data.Time.Clock.POSIX
