@@ -20,4 +20,12 @@ switch :: SF a (b, Event c) -> (c -> SF a b) -> SF a b
 
 \noindent The first argument of switch is best thought of as taking the form \hask{(sigFun \&\&\& eventSource)}, where \hask{sigFun :: SF a b} and \hask{eventSource :: SF a (Event c)}. The idea is that \hask{switch} says to use the signal function \hask{sigFun}, until \hask{eventSource} supplies an event. The event will be a sample of type \hask{Event c}, and this wrapped value of type \hask{c} is used to determine what the replacement signal function should be --- this is what the second input of type \hask{c -> SF a b} does. The result is a signal function of type \hask{SF a b}.
 
-In a more intuitive language, \hask{sigFun} is switched for a different signal function when an event occurs.
+In a more intuitive language, \hask{sigFun} is switched for a different signal function when an event occurs. Let's provide an example. We will rewrite our first hello program to use a switch to output a \hask{True} signal when a time of two seconds elapses.
+
+\lstinputlisting[caption={HelloEvent.hs}, label=lst:template]{./src/HelloEvent.hs}
+
+Our new version is certainly no simpler than the original, but it demonstrates basic use of events. \hask{waitTwo} is still our signal function, but now it makes use of a \hask{switch} to change its output. First \hask{waitTwo} outputs a constant signal false. When an event occurs from \hask{twoElapsed} however, it takes the value from this event (in this case \hask{()}) and uses the passed function to decide what signal function to switch to. In our case, the supplied function has a constant value \hask{constant True}, so upon an event from \hask{twoElapsed}, our signal function changes to take the value \hask{True} constantly.
+
+So now the timing work must be done in \hask{twoElapsed}. This looks much the same as before, except now \hask{time >>> arr (>=2)} is fed into a new signal function \hask{edge}. \hask{edge} has type \hask{SF Bool (Event ())}. \hask{edge} takes an input signal of value type \hask{Bool}, and when the signal value changes (from \hask{True} to \hask{False}, or \hask{False} to \hask{True}), it ouputs an \hask{Event ()} on its output; it otherwise outputs \hask{NoEvent}. In sum then, this means an event is generated when (at least) two seconds have elapsed.
+
+The sum effect is that our program prints its conclusion after waiting for two seconds. Notice that \hask{switch} is written in infix notation. One of the benefits of this is that it the initial signal function occurs on the left of \hask{switch} and the replacement upon an event on the right.
