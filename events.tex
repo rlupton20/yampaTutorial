@@ -29,3 +29,7 @@ Our new version is certainly no simpler than the original, but it demonstrates b
 So now the timing work must be done in \hask{twoElapsed}. This looks much the same as before, except now \hask{time >>> arr (>=2)} is fed into a new signal function \hask{edge}. \hask{edge} has type \hask{SF Bool (Event ())}. \hask{edge} takes an input signal of value type \hask{Bool}, and when the signal value changes (from \hask{True} to \hask{False}, or \hask{False} to \hask{True}), it ouputs an \hask{Event ()} on its output; it otherwise outputs \hask{NoEvent}. In sum then, this means an event is generated when (at least) two seconds have elapsed.
 
 The sum effect is that our program prints its conclusion after waiting for two seconds. Notice that \hask{switch} is written in infix notation. One of the benefits of this is that it the initial signal function occurs on the left of \hask{switch} and the replacement upon an event on the right.
+
+\begin{exercise}
+When a signal function \hask{sf} is switched for a signal function \hask{sf'}, the time for \hask{sf'} starts again from zero. In other words signal functions have their own local time. Write a small program to demonstrate this.
+\end{exercise}
