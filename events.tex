@@ -85,3 +85,24 @@ tag e v = fmap (const v) e.
 
 \subsection{Other ways of interacting with events}
 Switches are the main way in which event signals interact with other signals (or discrete signals interact with continuous signals if you prefer), but there are other ways we can interact with events.
+
+\begin{lstlisting}
+hold :: a -> SF (Event a) a
+\end{lstlisting}
+
+\noindent \hask{hold v} initially takes on the value \hask{v}, but when an event occurs on the input signal, it switches to the value wrapped in the event. In other words \hask{hold v} outputs the value wrapped by the previous event, and if no event has previously occured, it outputs value \hask{v}.
+
+Instead of changing a value, we also have the possibility of transformation.
+
+\begin{lstlisting}
+accum :: a -> SF (Event (a -> a)) (Event a)
+\end{lstlisting}
+
+\noindent \hask{accum v} receives a stream of events of type \hask{a->a}, and upon receiving an event, takes the wrapped function and applies it to the value of the previous event which was dispatched, and \hask{v} if none exists. Since it is natural to want to generate a signal consisting of just the value and not an event, Yampa also provides \hask{accumHold}:
+
+\begin{lstlisting}
+accumHold :: a -> SF (Event (a->a)) a
+accumHold v = accum v >>> hold v
+\end{lstlisting}
+
+\noindent This is useful for creating counters and other similar devices.
