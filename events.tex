@@ -67,3 +67,21 @@ repeatedly :: Time -> b -> SF a (Event b)
 \end{lstlisting}
 
 \noindent \hask{repeatedly t v} generates a signal which has value \hask{NoEvent} at all times except whole number multiplicities of \hask{t} seconds, at which point the signal has value \hask{Event v}. Zero time is when \hask{repeatedly} starts running.
+
+Note that \hask{edge} produces an \hask{Event ()} signal. Sometimes we might want to attach or force an event to take on certain value. This is what the function \hask{tag} is for.
+
+\begin{lstlisting}
+tag :: Event a -> b -> Event b
+\end{lstlisting}
+
+\noindent In fact since \hask{Event} is a functor (it is isomorphic to \hask{Maybe}), \hask{tag} can be defined by
+
+\begin{lstlisting}
+tag e v = fmap (const v) e.
+\end{lstlisting}.
+
+
+\subsection{More switches}
+
+\subsection{Other ways of interacting with events}
+Switches are the main way in which event signals interact with other signals (or discrete signals interact with continuous signals if you prefer), but there are other ways we can interact with events.
