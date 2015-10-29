@@ -22,7 +22,7 @@ switch :: SF a (b, Event c) -> (c -> SF a b) -> SF a b
 
 In a more intuitive language, \hask{sigFun} is switched for a different signal function when an event occurs. Let's provide an example. We will rewrite our first hello program to use a switch to output a \hask{True} signal when a time of two seconds elapses.
 
-\lstinputlisting[caption={HelloEvent.hs}, label=lst:template]{./src/HelloEvent.hs}
+\lstinputlisting[caption={HelloEvent.hs}, label=lst:helloEvent]{./src/HelloEvent.hs}
 
 Our new version is certainly no simpler than the original, but it demonstrates basic use of events. \hask{waitTwo} is still our signal function, but now it makes use of a \hask{switch} to change its output. First \hask{waitTwo} outputs a constant signal false. When an event occurs from \hask{twoElapsed} however, it takes the value from this event (in this case \hask{()}) and uses the passed function to decide what signal function to switch to. In our case, the supplied function has a constant value \hask{constant True}, so upon an event from \hask{twoElapsed}, our signal function changes to take the value \hask{True} constantly.
 
@@ -33,3 +33,37 @@ The sum effect is that our program prints its conclusion after waiting for two s
 \begin{exercise}
 When a signal function \hask{sf} is switched for a signal function \hask{sf'}, the time for \hask{sf'} starts again from zero. In other words signal functions have their own local time. Write a small program to demonstrate this.
 \end{exercise}
+
+\subsection{Other event generating functions}
+
+We saw above how to use \hask{edge} to generate an event when a signal changes from \hask{True} to \hask{False} or \hask{False} to \hask{True}, but Yampa provides a few other functions to generate events also.
+
+\begin{lstlisting}
+never :: SF a (Event b)
+\end{lstlisting}
+
+\noindent simply never generates an event. More useful perhaps is
+
+\begin{lstlisting}
+now :: b -> SF a (Event b)
+\end{lstlisting}
+
+\noindent which generates an event (with value) of type \hask{b} immediately. In other words \hask{now v} is a signal function which has value \hask{Event v} immediately, and \hask{NoEvent} afterwards.
+
+\begin{lstlisting}
+after :: Time -> b -> SF a (Event b)
+\end{lstlisting}
+
+\noindent generates an event after some specified period time, with a value of type \hask{b}. \hask{after t v} will generate a signal of value \hask{Event v} in \hask{t} seconds, with a value of \hask{NoEvent} at all other times.
+
+\begin{exercise}
+Rewrite listing \ref{lst:helloEvent} to use \hask{after}.
+\end{exercise}
+
+\noindent For those situations where having an event reoccur at regular intervals, Yampa provides
+
+\begin{lstlisting}
+repeatedly :: Time -> b -> SF a (Event b)
+\end{lstlisting}
+
+\noindent \hask{repeatedly t v} generates a signal which has value \hask{NoEvent} at all times except whole number multiplicities of \hask{t} seconds, at which point the signal has value \hask{Event v}. Zero time is when \hask{repeatedly} starts running.
